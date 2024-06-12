@@ -26,7 +26,7 @@ double **inv(double **A, int n)
                     free(I[i]);
                 }
                 free(I);
-                return;
+                return NULL;
             }
         }
 
