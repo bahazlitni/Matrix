@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void inv(double **A, int n)
+double **inv(double **A, int n)
 {
     double **I = (double **)malloc(n * sizeof(double *));
 
@@ -68,8 +68,8 @@ void inv(double **A, int n)
     }
     for (i = 0; i < n; i++)
     {
-        A[i] = I[i];
-        free(I[i]);
+        free(A[i]);
     }
-    free(I);
+    free(A);
+    return I;
 }
