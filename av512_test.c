@@ -1,13 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <immintrin.h> // Include for AVX2 intrinsics
+#include <immintrin.h> // Include for AVX2 and AVX-512 intrinsics
 #include <time.h>
 
 double *addArrays_AVX2(double *A, double *B, int size)
 {
-    double *result = (double *)_aligned_malloc(32, size * sizeof(double));
+    double *result = (double *)_mm_malloc(size * sizeof(double), 32);
 
-    for (int i = 0; i < size; i += 4)
+    if (result == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int i;
+    for (i = 0; i < size; i += 4)
     {
         _mm256_store_pd(
             &result[i],
@@ -16,20 +23,39 @@ double *addArrays_AVX2(double *A, double *B, int size)
                 _mm256_load_pd(&B[i]))); // Store the result
     }
 
+    // Handle the remainder elements
+    for (; i < size; i++)
+    {
+        result[i] = A[i] + B[i];
+    }
+
     return result;
 }
 
 double *addArrays_AVX512(double *A, double *B, int size)
 {
-    double *result = (double *)_aligned_malloc(64, size * sizeof(double));
+    double *result = (double *)_mm_malloc(size * sizeof(double), 64);
 
-    for (int i = 0; i < size; i += 8)
+    if (result == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int i;
+    for (i = 0; i < size; i += 8)
     {
         _mm512_store_pd(
             &result[i],
             _mm512_add_pd(
                 _mm512_load_pd(&A[i]),
                 _mm512_load_pd(&B[i]))); // Store the result
+    }
+
+    // Handle the remainder elements
+    for (; i < size; i++)
+    {
+        result[i] = A[i] + B[i];
     }
 
     return result;
@@ -79,9 +105,11 @@ int main()
 
     displayArray(A, size, (char *)"A");
     displayArray(B, size, (char *)"B");
-    displayArray(sum, size, (char *)"Sum (AVX2)");
+    displayArray(sum, size, (char *)"Sum (AVX512)");
 
-    free(sum);
+    _mm_free(sum);
+    free(A);
+    free(B);
     system("pause"); // Wait for a key press
     return 0;
 }
